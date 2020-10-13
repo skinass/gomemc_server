@@ -41,20 +41,36 @@ type HandlerFunc func(ctx context.Context, req *Request, res *Response) error
 
 // Server implements memcached server.
 type Server struct {
+	network string
 	addr    string
 	ln      net.Listener
 	methods map[string]HandlerFunc // should init this map before working
 	clients sync.Map
 
 	stopped int32
+
+	logger logger
 }
 
-// NewServer creates a memcached server.
+// NewServer creates a memcached server with tcp proto
 func NewServer(addr string) *Server {
+	return NewServerWithNet("tcp", addr)
+}
+
+func NewServerWithNet(net, addr string) *Server {
 	return &Server{
+		network: net,
 		addr:    addr,
 		methods: make(map[string]HandlerFunc),
 	}
+}
+
+type logger interface {
+	Printf(string, ...interface{})
+}
+
+func (s *Server) SetLogger(l logger) {
+	s.logger = l
 }
 
 // Start starts a memcached server in a goroutine.
@@ -62,12 +78,12 @@ func NewServer(addr string) *Server {
 // on incoming connections. Accepted connections are configured to enable TCP keep-alives.
 func (s *Server) Start() error {
 	var err error
-	s.ln, err = net.Listen("tcp", s.addr)
+	s.ln, err = net.Listen(s.network, s.addr)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("memcached server starts on %s", s.addr)
+	s.logPrintf("memcached server starts on %s", s.addr)
 	go s.Serve(s.ln)
 	return nil
 }
@@ -90,11 +106,11 @@ func (s *Server) Serve(ln net.Listener) error {
 				if max := 1 * time.Second; tempDelay > max {
 					tempDelay = max
 				}
-				log.Printf("accept error: %v; retrying in %v", err, tempDelay)
+				s.logPrintf("accept error: %v; retrying in %v", err, tempDelay)
 				time.Sleep(tempDelay)
 				continue
 			}
-			log.Printf("memcached server accept error: %v", err)
+			s.logPrintf("memcached server accept error: %v", err)
 			return err
 		}
 		tempDelay = 0
@@ -139,18 +155,18 @@ func (s *Server) handleConn(conn net.Conn) {
 	for atomic.LoadInt32(&s.stopped) == 0 {
 		req, err := ReadRequest(r)
 		if perr, ok := err.(Error); ok {
-			log.Printf("%v ReadRequest protocol err: %v", conn, err)
+			s.logPrintf("%v ReadRequest protocol err: %v", conn, err)
 			w.WriteString(RespClientErr + perr.Error() + "\r\n")
 			w.Flush()
 			continue
 		} else if err != nil {
-			log.Printf("ReadRequest from %s err: %v", conn.RemoteAddr().String(), err)
+			s.logPrintf("ReadRequest from %s err: %v", conn.RemoteAddr().String(), err)
 			return
 		}
 
 		cmd := req.Command
 		if cmd == "quit" {
-			log.Printf("client send quit, closed")
+			s.logPrintf("client send quit, closed")
 			return
 		}
 
@@ -159,7 +175,7 @@ func (s *Server) handleConn(conn net.Conn) {
 		if exists {
 			err := fn(ctx, req, res)
 			if err != nil {
-				log.Printf("ERROR: %v, Conn: %v, Req: %+v\n", err, conn, req)
+				s.logPrintf("ERROR: %v, Conn: %v, Req: %+v\n", err, conn, req)
 				res.Response = RespServerErr + err.Error()
 			}
 			if !req.Noreply {
@@ -225,4 +241,11 @@ func (s *Server) drainConn() {
 		k.(net.Conn).Close()
 		return true
 	})
+}
+
+func (s *Server) logPrintf(format string, v ...interface{}) {
+	if s.logger != nil {
+		s.logger.Printf(format, v...)
+	}
+	log.Printf(format, v...)
 }
