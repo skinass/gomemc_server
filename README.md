@@ -2,13 +2,13 @@
 Memcached protocol implementation for memcached server.
 You can use it to create a memcached server easily.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://opensource.org/licenses/MIT) [![GoDoc](https://godoc.org/github.com/rpcxio/gomemcached?status.png)](http://godoc.org/github.com/rpcxio/gomemcached)  [![travis](https://travis-ci.org/smallnest/gomemcached.svg?branch=master)](https://travis-ci.org/smallnest/gomemcached) [![Go Report Card](https://goreportcard.com/badge/github.com/rpcxio/gomemcached)](https://goreportcard.com/report/github.com/rpcxio/gomemcached) [![Coverage Status](https://coveralls.io/repos/smallnest/gomemcached/badge.svg?branch=master&service=github)](https://coveralls.io/github/smallnest/gomemcached?branch=master) 
+[![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://opensource.org/licenses/MIT) [![GoDoc](https://godoc.org/github.com/skinass/gomemc_server?status.png)](http://godoc.org/github.com/skinass/gomemc_server)  [![travis](https://travis-ci.org/smallnest/gomemcached.svg?branch=master)](https://travis-ci.org/smallnest/gomemcached) [![Go Report Card](https://goreportcard.com/badge/github.com/skinass/gomemc_server)](https://goreportcard.com/report/github.com/skinass/gomemc_server) [![Coverage Status](https://coveralls.io/repos/smallnest/gomemcached/badge.svg?branch=master&service=github)](https://coveralls.io/github/smallnest/gomemcached?branch=master) 
 
 
 import this lib:
 
 ```sh
-go get -u github.com/rpcxio/gomemcached
+go get -u github.com/skinass/gomemc_server
 ```
 
 

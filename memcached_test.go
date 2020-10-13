@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bradfitz/gomemcache/memcache"
+	"github.com/skinass/gomemcache/memcache"
 )
 
 var mockServer *Server
