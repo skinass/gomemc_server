@@ -19,15 +19,16 @@ const RealtimeMaxDelta = 60 * 60 * 24 * 30
 // Exptime will always be 0 or epoch (in seconds)
 type Request struct {
 	// Command is memcached command name, see https://github.com/memcached/memcached/wiki/Commands
-	Command string
-	Key     string
-	Keys    []string
-	Flags   string
-	Exptime int64 //in second
-	Data    []byte
-	Value   int64
-	Cas     string
-	Noreply bool
+	Command    string
+	Key        string
+	Keys       []string
+	Flags      string
+	Exptime    int64 //in second
+	RawExptime int64
+	Data       []byte
+	Value      int64
+	Cas        string
+	Noreply    bool
 }
 
 // Error is memcached protocol error.
@@ -75,6 +76,7 @@ func ReadRequest(r *bufio.Reader) (req *Request, err error) {
 			return nil, NewError("cannot read exptime " + err.Error())
 		}
 		if req.Exptime > 0 {
+			req.RawExptime = req.Exptime
 			if req.Exptime <= RealtimeMaxDelta {
 				req.Exptime = time.Now().Unix()/1e9 + req.Exptime
 			}
@@ -127,6 +129,7 @@ func ReadRequest(r *bufio.Reader) (req *Request, err error) {
 			return nil, NewError("cannot read exptime " + err.Error())
 		}
 		if req.Exptime > 0 {
+			req.RawExptime = req.Exptime
 			if req.Exptime <= RealtimeMaxDelta {
 				req.Exptime = time.Now().Unix()/1e9 + req.Exptime
 			}
@@ -223,6 +226,7 @@ func ReadRequest(r *bufio.Reader) (req *Request, err error) {
 			return nil, NewError("cannot read exptime " + err.Error())
 		}
 		if req.Exptime > 0 {
+			req.RawExptime = req.Exptime
 			if req.Exptime <= RealtimeMaxDelta {
 				req.Exptime = time.Now().Unix()/1e9 + req.Exptime
 			}
