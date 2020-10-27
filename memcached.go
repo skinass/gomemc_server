@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"runtime/debug"
@@ -49,7 +50,8 @@ type Server struct {
 
 	stopped int32
 
-	logger logger
+	logger     logger
+	dontLogEOF bool
 }
 
 // NewServer creates a memcached server with tcp proto
@@ -71,6 +73,10 @@ type logger interface {
 
 func (s *Server) SetLogger(l logger) {
 	s.logger = l
+}
+
+func (s *Server) SetDontLogEOFFail(flag bool) {
+	s.dontLogEOF = flag
 }
 
 // Start starts a memcached server in a goroutine.
@@ -159,6 +165,8 @@ func (s *Server) handleConn(conn net.Conn) {
 			w.WriteString(RespClientErr + perr.Error() + "\r\n")
 			w.Flush()
 			continue
+		} else if err == io.EOF {
+			return
 		} else if err != nil {
 			s.logPrintf("ReadRequest from %s err: %v", conn.RemoteAddr().String(), err)
 			return
