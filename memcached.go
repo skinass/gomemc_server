@@ -166,7 +166,7 @@ func (s *Server) handleConn(conn net.Conn) {
 			w.WriteString(RespClientErr + perr.Error() + "\r\n")
 			w.Flush()
 			continue
-		} else if err == io.EOF {
+		} else if s.dontLogEOF && err == io.EOF {
 			return
 		} else if err != nil {
 			s.logPrintf("ReadRequest from %s err: %v", conn.RemoteAddr().String(), err)
@@ -244,6 +244,42 @@ func (s *Server) Stop() error {
 	return err
 }
 
+// StopGraceful stops this memcached sever without closing internal net.Listener
+func (s *Server) StopGraceful() error {
+	var err error
+	if !atomic.CompareAndSwapInt32(&s.stopped, 0, 1) {
+		return nil
+	}
+
+	//Make on processing commamd to run over
+	time.Sleep(200 * time.Millisecond)
+
+	s.drainConn()
+
+	// for s.count() != 0 {
+	// 	time.Sleep(time.Millisecond)
+	// }
+
+	checkStart := time.Now()
+	for {
+		found := false
+		s.clients.Range(func(k, v interface{}) bool {
+			found = true
+			return false
+		})
+		if found {
+			time.Sleep(10 * time.Millisecond)
+		}
+		// wait at most 1 second
+		if time.Since(checkStart).Seconds() > 1 {
+			break
+		}
+	}
+
+	s.logPrintf("memcached server stop")
+	return err
+}
+
 // close connection of clients.
 func (s *Server) drainConn() {
 	s.clients.Range(func(k, v interface{}) bool {
@@ -255,6 +291,7 @@ func (s *Server) drainConn() {
 func (s *Server) logPrintf(format string, v ...interface{}) {
 	if s.logger != nil {
 		s.logger.Printf(format, v...)
+		return
 	}
 	log.Printf(format, v...)
 }
