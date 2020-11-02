@@ -99,6 +99,8 @@ func (s *Server) Start() error {
 func (s *Server) Serve(ln net.Listener) error {
 	defer ln.Close()
 
+	s.ln = ln
+
 	var tempDelay time.Duration // how long to sleep on accept failure
 	for {
 		conn, err := ln.Accept()
