@@ -3,7 +3,6 @@ package mc
 import (
 	"bufio"
 	"context"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -148,7 +147,7 @@ func (s *Server) RegisterFunc(cmd string, fn HandlerFunc) error {
 func (s *Server) handleConn(conn net.Conn) {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Printf("memcached server panic error: %s, stack: %s", err, string(debug.Stack()))
+			s.logPrintf("memcached server panic error: %s, stack: %s", err, string(debug.Stack()))
 		}
 		s.clients.Delete(conn)
 		conn.Close()
@@ -208,12 +207,12 @@ func (s *Server) Stop() error {
 	}
 
 	if s.ln == nil {
-		fmt.Println("memcached server has not started")
+		s.logPrintf("memcached server has not started")
 		return nil
 	}
 
 	if err = s.ln.Close(); err != nil {
-		fmt.Printf("failed to close listener: %v", err)
+		s.logPrintf("failed to close listener: %v", err)
 	}
 
 	//Make on processing commamd to run over
@@ -241,7 +240,7 @@ func (s *Server) Stop() error {
 		}
 	}
 
-	fmt.Println("memcached server stop")
+	s.logPrintf("memcached server stop")
 	return err
 }
 
